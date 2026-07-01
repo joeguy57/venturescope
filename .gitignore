@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+#Data files (too large for Github)
+data/
+
+# dbt profile (contains your database credentials)
+venturescope_dbt/profiles.yml
+
