@@ -96,7 +96,7 @@ df["categories_raw"] = df["categories_raw"].fillna("Unknown").str.lower().str.st
 
 # Primary category = first item before the pipe character i.e |category1|category2| should pull category 1
 df["primary_category"] = (
-    df["categories_raw"].str.split("|").str[1].str.strip().str.title()
+    df["categories_raw"].str.split("|").str[0].str.strip().str.title()
 )
 
 # Count how many categories each startup is tagged with
