@@ -94,8 +94,10 @@ for col in date_cols:
 
 df["categories_raw"] = df["categories_raw"].fillna("Unknown").str.lower().str.strip()
 
-# Primary category = first item before the pipe character
-df["primary_category"] = df["categories_raw"].apply(lambda x: x.split("|")[0] if pd.notnull(x) else "Unknown")
+# Primary category = first item before the pipe character i.e |category1|category2| should pull category 1
+df["primary_category"] = (
+    df["categories_raw"].str.split("|").str[1].str.strip().str.title()
+)
 
 # Count how many categories each startup is tagged with
 df["category_count"] = df["categories_raw"].apply(lambda x: len(x.split("|")) if pd.notnull(x) else 0)
