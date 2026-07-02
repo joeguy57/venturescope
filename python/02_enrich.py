@@ -80,3 +80,13 @@ REGION_MAP = {
     "BRA": "Latin America",
     "ARG": "Latin America",
     "CHL": "Latin America"}
+
+df["region"] = df["country_code"].map(REGION_MAP).fillna("Other")
+
+# Save the enriched dataset to a new CSV file
+df.to_csv("data/crunchbase_enriched.csv", index=False)
+
+print(f"Enriched data shape: {df.shape}\n")
+print(f"Investor tier distribution:\n{df['investor_tier'].value_counts()}\n")
+print(f"Region distribution:\n{df['region'].value_counts()}\n")
+print(f"Founded decade distribution:\n{df['founded_decade'].value_counts()}\n")
