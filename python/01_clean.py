@@ -143,3 +143,18 @@ df["is_us_based"] = df["country"].apply(lambda x: True if str(x).strip().upper()
 df["reached_series_b"] = df["highest_round_reached"].apply(lambda x: True if x in ["round_b", "round_c", "round_d", "round_e", "round_f", "round_g", "round_h"] else False)
 
 
+# Drop rows with no company name or outcome
+df = df.dropna(subset=["company_name", "outcome"])
+
+# Remove obvious duplicates
+df = df.drop_duplicates(subset=["company_name", "founded_date"])
+
+print(f"Cleaned data shape: {df.shape}\n")
+print(f"Outcome distribution after cleaning:\n{df['outcome'].value_counts(dropna=False)}\n")
+print(f"Countries: {df['country'].nunique()}\n")
+print(f"Primary categories: {df['primary_category'].nunique()}\n")
+print(f"Founded year range: {df['founded_year'].min()} - {df['founded_year'].max()}\n")
+
+
+#save cleaned data to CSV
+df.to_csv("data/crunchbase_cleaned.csv", index=False, encoding="utf-8")
