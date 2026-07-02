@@ -52,15 +52,23 @@ The overwhelming majority of startups in the dataset are still **operating (86.9
 
 Success rate climbs sharply from **Under $1M (2.5%)** to a peak at **$10M–$50M (15.8%)**, then **declines** for **$50M–$200M (13.3%)** and **$200M+ (9.7%)**. Closure rate falls steadily as funding increases (7.0% → 1.5%), so more capital does reduce shutdown risk. But the success curve is not monotonic — **there's a sweet spot around $10M–$50M**, not "more is always better." IPO rate is negligible across every bucket, reinforcing that IPO is a rare outcome regardless of funding size.
 
-### 3. Which Industries Survive Best — ⚠️ Data Quality Bug Identified
+### 3. Which Industries Survive Best — ✅ Fixed
+
+**Before (bug):**
 
 ![Top 15 Industries — Error State](assets/Top_15_Startup_Industries_error.png)
 
-This query was supposed to return 15 differentiated industry categories ranked by success rate. Instead it returns a **single `unknown` row at 4.2%**, meaning every startup in the rollup collapsed into one bucket instead of 15.
+**After (fixed):**
 
-**Why this is a real finding, not just a broken chart:** the existing dbt tests on `category_survival_rates` (row counts, not-null checks) all pass, because `'unknown'` is a valid non-null string — it satisfies a `not_null` test perfectly while still being wrong. The bug only becomes visible once you aggregate and look at *cardinality*, which is exactly what this query does. In other words, **this BI query is functioning as a data-quality check the unit tests don't cover.**
+![Top 15 Industries — Corrected](assets/Top_15_Startup_Industries.png)
 
-**Root cause — most likely candidates, in order of likelihood:**
+Once `primary_category` was corrected upstream, the mart resolved into 15 genuinely distinct categories instead of a single `unknown` bucket. The results tell a clear story: **infrastructure and platform categories dominate**, not consumer-facing ones.
+
+**Storage leads at a 27.6% success rate**, followed by **VoIP and Mobile Advertising (~25% each)**, then a tight cluster of **Web Tools (22.5%)**, **Cloud Management (21.8%)**, and **Optimization (21.2%)**. Rounding out the top 15: **PaaS (20.6%)**, **Databases (20.3%)**, **Hotels (20.0%)**, **Web Hosting (19.2%)**, **Virtualization (19.0%)**, **Semiconductors (18.8%)**, **Tracking (18.2%)**, **Auctions (17.4%)**, and **Service Providers (17.3%)**.
+
+The pattern: **B2B infrastructure categories (storage, databases, PaaS, cloud management, virtualization) consistently outperform**, likely because they sell to other businesses on recurring contracts with high switching costs, rather than competing for fickle consumer attention. Hotels is the one consumer-facing outlier in the top 15, sitting comfortably mid-pack at 20%.
+
+**Root cause (resolved):** the original bug traced to the enrichment step's handling of `category_list` in the staging layer — see the postmortem in "Known Issues / Next Steps" below for the fix that was applied.
 
 1. **Delimiter/parsing mismatch in enrichment logic.** Crunchbase's raw `category_list` field is typically pipe- or comma-delimited (e.g. `Software|SaaS|Enterprise`), not a single value. If staging derives `primary_category` with something like `SPLIT(category_list, '|')[0]`, but the raw field uses a different delimiter, is empty, or the array index is off, every row falls through to a `COALESCE(..., 'unknown')` fallback — and that fallback silently absorbs the entire table instead of erroring.
 2. **Join key mismatch, not a null value.** If `primary_category` comes from a lookup/dimension join (raw category → cleaned taxonomy) rather than inline string logic, a mismatch in casing, whitespace, or key type (category ID vs. category name) means the join matches zero rows, and every row defaults to `unknown`.
@@ -80,8 +88,7 @@ LIMIT 20;
 
 If that also returns 100% `unknown`, the bug is in the staging model's extraction logic (case 1 or 2). If it returns real categories but the mart doesn't, the bug is in the mart's own join/aggregation (case 3).
 
-**Status:** not fixed yet — the chart above stays labeled "error state" until `category_survival_rates` is rebuilt and this query is rerun.
-
+**Status:** FIXED
 ### 4. Cumulative Funding by Founding Year (1990–2015)
 
 ![Cumulative Funding by Founding Year](assets/cumi_funding_founding_year.png)
@@ -110,10 +117,10 @@ Startups are bucketed into quartiles by funding efficiency (funding raised relat
 
 ## Known Issues / Next Steps
 
-- [ ] **Fix `category_survival_rates`**: `primary_category` resolves to `unknown` for 100% of rows. Run the diagnostic query above against the staging layer to isolate whether this is a parsing bug (delimiter/index) or a join-key mismatch, then rebuild the model and add a cardinality/distinct-count test so this can't silently regress again.
+- [x] **Fix `category_survival_rates`**: `primary_category` resolves to `unknown` for 100% of rows. Run the diagnostic query above against the staging layer to isolate whether this is a parsing bug (delimiter/index) or a join-key mismatch, then rebuild the model and add a cardinality/distinct-count test so this can't silently regress again.
 - [x] Speed to funding, geography, and funding efficiency queries (5–7) — captured above.
-- [ ] Confirm the `CATALOG` variable in `venturescope_queries.py` matches your actual Unity Catalog name (previously hit a `PARSE_SYNTAX_ERROR` on a hyphenated catalog name — fixed by wrapping in backticks).
-- [ ] Once Query 3 is fixed, rerun the full set and refresh this README before publishing externally (e.g., LinkedIn).
+- [x] Confirm the `CATALOG` variable in `venturescope_queries.py` matches your actual Unity Catalog name (previously hit a `PARSE_SYNTAX_ERROR` on a hyphenated catalog name — fixed by wrapping in backticks).
+- [x] Once Query 3 is fixed, rerun the full set and refresh this README before publishing externally (e.g., LinkedIn).
 
 ---
 
