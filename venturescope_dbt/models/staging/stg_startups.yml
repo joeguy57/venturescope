@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: venturescope
+    description: "This is the source data for the venturescope project."
+    tables:
+      - name: startups_raw
+        description: "Raw Crunchbase data for startupss loaded from CSV"
+
+models:
+    - name: stg_startups
+      description: "This model is a staging layer for the startups data."
+      columns:
+        - name: company_name
+          description: "The name of the startup company."
+          tests:
+              - not_null
+        - name: outcome
+          description: "The outcome of the startup (e.g., acquired, IPO, closed)."
+          tests:
+              - accepted_values:
+                  values: ['acquired', 'ipo', 'closed', 'operating']
+        - name: total_funding_usd
+          description: "The total funding amount in USD for the startup."
+        - name: funding_rounds
+          description: "The number of funding rounds the startup has gone through."
+            
