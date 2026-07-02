@@ -27,3 +27,5 @@ def investor_tier(venture_usd):
     
 
 df["investor_tier"] = df["venture"].apply(investor_tier)
+
+df["age_at_last_funding_date"] = ((df["last_funding_date"] - df["founded_date"]).dt.days / 365.25).round(1)
