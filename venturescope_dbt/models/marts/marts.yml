@@ -1,0 +1,33 @@
+version: 2
+
+
+models:
+    - name: startup_outcomes
+      description: >
+        One row per startup. Combines all cleaned features with binary outcome
+        flags and bucketed variables. Primary table for outcome analysis.
+      columns:
+        - name: company_name
+          tests:
+            - not_null
+        - name: outcome
+          tests:
+            - not_null
+            - accepted_values:
+                values: ['operating', 'acquired', 'ipo', 'closed']
+        - name: is_successful_exit
+          description: "1 if outcome is IPO or acquired, 0 otherwise"
+        - name: funding_bucket
+          description: "Bucketed total funding for easy grouping"
+    - name: category_survival_rates
+      description: >
+        Aggregated outcome rates by startup industry category.
+        Only includes categories with 20+ startups for statistical reliability.
+    - name: investor_power_index
+      description: >
+        Outcome rates broken down by investor tier (VC amount raised).
+        Shows whether bigger funding rounds correlate with better outcomes.
+    - name: funding_efficiency
+      description: >
+        Compares startup outcomes across funding efficiency quartiles.
+        Tests whether efficient capital use predicts better outcomes.
