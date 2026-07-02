@@ -3,9 +3,9 @@ import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
 
-df = pd.read_csv("data/crunchbase_clean.csv", parse_dates=["founded_date", "first_funding_date", "last_funding_date"])
+df = pd.read_csv("data/crunchbase_cleaned.csv", parse_dates=["founded_date", "first_funding_date", "last_funding_date"])
 
-print(f"Loaded {len(df)} rows and {len(df.columns)} columns from crunchbase_clean.csv\n")
+print(f"Loaded {len(df)} rows and {len(df.columns)} columns from crunchbase_cleaned.csv\n")
 
 #Avoid division by zero
 df["funding_efficiency"] = df.apply(lambda row: np.log10(row["total_funding_usd"] / row["funding_rounds"]) if row["funding_rounds"] > 0 else np.nan, axis=1)
@@ -81,7 +81,7 @@ REGION_MAP = {
     "ARG": "Latin America",
     "CHL": "Latin America"}
 
-df["region"] = df["country_code"].map(REGION_MAP).fillna("Other")
+df["region"] = df["country"].map(REGION_MAP).fillna("Other")
 
 # Save the enriched dataset to a new CSV file
 df.to_csv("data/crunchbase_enriched.csv", index=False)
