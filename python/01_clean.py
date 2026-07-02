@@ -70,7 +70,7 @@ for col in funding_columns:
 
 
 # Clean Date Columns
-from dateime import datetime
+from datetime import datetime
 
 def parse_date(val):
     """Parse date strings into datetime objects, handling missing values."""
@@ -99,3 +99,47 @@ df["primary_category"] = df["categories_raw"].apply(lambda x: x.split("|")[0] if
 
 # Count how many categories each startup is tagged with
 df["category_count"] = df["categories_raw"].apply(lambda x: len(x.split("|")) if pd.notnull(x) else 0)
+
+
+# How long did it take to go from founded to funded? (in days)
+df["days_to_first_funding"] = (df["first_funding_date"] - df["founded_date"]).dt.days
+
+# How long between first and last funding? (in days)
+df["days_between_first_last_funding"] = (df["last_funding_date"] - df["first_funding_date"]).dt.days
+
+# Average funding per round (total funding / number of rounds) account for 0's in number of rounds
+df["average_funding_per_round"] = df.apply(lambda row: row["total_funding_usd"] / row["funding_rounds"] if row["funding_rounds"] > 0 else np.nan, axis=1)
+
+# What year was the startup founded? (extract year from founded_date)
+df["founded_year"] = df["founded_date"].dt.year
+
+# What year did they get their first funding? (extract year from first_funding_date)
+df["first_funding_year"] = df["first_funding_date"].dt.year
+
+# Funding stage bucket based on highest round reached
+def highest_round(row):
+    rounds = {
+        "round_h": row.get("round_h", 0),
+        "round_g": row.get("round_g", 0),
+        "round_f": row.get("round_f", 0),
+        "round_e": row.get("round_e", 0),
+        "round_d": row.get("round_d", 0),
+        "round_c": row.get("round_c", 0),
+        "round_b": row.get("round_b", 0),
+        "round_a": row.get("round_a", 0),
+        "seed": row.get("seed", 0)
+    }
+    for label, val in rounds.items():
+        if pd.notna(val) and val > 0:
+            return label
+    return "Unknown"
+
+df["highest_round_reached"] = df.apply(highest_round, axis=1)
+
+# Is this a US-based startup? (country code = USA)
+df["is_us_based"] = df["country"].apply(lambda x: True if str(x).strip().upper() == "USA" else False)
+
+# Has the startup raised Series B or higher?
+df["reached_series_b"] = df["highest_round_reached"].apply(lambda x: True if x in ["round_b", "round_c", "round_d", "round_e", "round_f", "round_g", "round_h"] else False)
+
+
